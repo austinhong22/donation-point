@@ -16,6 +16,9 @@ public interface DonationAllocationRepository extends JpaRepository<DonationAllo
     @EntityGraph(attributePaths = {"donor", "charity", "donorPointAccount", "charityPointAccount"})
     List<DonationAllocation> findAllByCharityIdOrderByCreatedAtDesc(Long charityId);
 
+    @EntityGraph(attributePaths = {"donor", "charity", "donorPointAccount", "charityPointAccount"})
+    List<DonationAllocation> findAllByDonorIdOrderByCreatedAtDesc(Long donorId);
+
     @Query("select allocation from DonationAllocation allocation where allocation.id = :id")
     @EntityGraph(attributePaths = {"donor", "charity", "donorPointAccount", "charityPointAccount"})
     Optional<DonationAllocation> findWithDetailById(@Param("id") Long id);

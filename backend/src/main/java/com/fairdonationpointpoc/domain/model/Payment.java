@@ -41,6 +41,20 @@ public class Payment {
     protected Payment() {
     }
 
+    public Payment(
+        User donor,
+        String externalPaymentRef,
+        long amountKrw,
+        PaymentStatus status,
+        LocalDateTime createdAt
+    ) {
+        this.donor = donor;
+        this.externalPaymentRef = externalPaymentRef;
+        this.amountKrw = amountKrw;
+        this.status = status;
+        this.createdAt = createdAt;
+    }
+
     public Long getId() {
         return id;
     }
@@ -63,5 +77,9 @@ public class Payment {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public void markConverted() {
+        this.status = PaymentStatus.CONVERTED;
     }
 }

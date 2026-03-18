@@ -7,8 +7,13 @@ import type {
   Charity,
   CharityAllocationSummary,
   CharityOrder,
+  CreateDonationAllocationInput,
   CreateCharityOrderInput,
+  CreateMockPaymentInput,
   DemoActor,
+  DonorAllocation,
+  DonorDashboard,
+  DonorPayment,
   PartnerProduct,
 } from './types';
 
@@ -68,6 +73,60 @@ export async function listDemoActors() {
 export async function listCharities() {
   try {
     const response = await apiClient.get<Charity[]>('/api/v1/charities');
+    return response.data;
+  } catch (error) {
+    mapError(error);
+  }
+}
+
+export async function getDonorDashboard() {
+  try {
+    const response = await apiClient.get<DonorDashboard>('/api/v1/donor/me/dashboard');
+    return response.data;
+  } catch (error) {
+    mapError(error);
+  }
+}
+
+export async function listDonorPayments() {
+  try {
+    const response = await apiClient.get<DonorPayment[]>('/api/v1/donor/me/payments');
+    return response.data;
+  } catch (error) {
+    mapError(error);
+  }
+}
+
+export async function createMockPayment(input: CreateMockPaymentInput) {
+  try {
+    const response = await apiClient.post<DonorPayment>('/api/v1/donor/payments', input);
+    return response.data;
+  } catch (error) {
+    mapError(error);
+  }
+}
+
+export async function convertDonorPayment(paymentId: number) {
+  try {
+    const response = await apiClient.post<DonorPayment>(`/api/v1/donor/payments/${paymentId}/convert`);
+    return response.data;
+  } catch (error) {
+    mapError(error);
+  }
+}
+
+export async function listDonorAllocations() {
+  try {
+    const response = await apiClient.get<DonorAllocation[]>('/api/v1/donor/me/allocations');
+    return response.data;
+  } catch (error) {
+    mapError(error);
+  }
+}
+
+export async function createDonationAllocation(input: CreateDonationAllocationInput) {
+  try {
+    const response = await apiClient.post<DonorAllocation>('/api/v1/donor/allocations', input);
     return response.data;
   } catch (error) {
     mapError(error);

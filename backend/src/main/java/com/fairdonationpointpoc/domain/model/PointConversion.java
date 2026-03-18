@@ -43,6 +43,20 @@ public class PointConversion {
     protected PointConversion() {
     }
 
+    public PointConversion(
+        Payment payment,
+        PointAccount pointAccount,
+        long convertedPoints,
+        PointConversionStatus status,
+        LocalDateTime createdAt
+    ) {
+        this.payment = payment;
+        this.pointAccount = pointAccount;
+        this.convertedPoints = convertedPoints;
+        this.status = status;
+        this.createdAt = createdAt;
+    }
+
     public Long getId() {
         return id;
     }

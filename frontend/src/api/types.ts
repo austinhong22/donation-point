@@ -17,6 +17,33 @@ export interface Charity {
   pointBalance: number;
 }
 
+export interface DonorDashboard {
+  pointBalance: number;
+  totalConvertedPoints: number;
+  totalAllocatedPoints: number;
+  pendingPayments: number;
+  activeAllocations: number;
+}
+
+export interface DonorPayment {
+  paymentId: number;
+  externalPaymentRef: string;
+  amountKrw: number;
+  status: string;
+  convertedPoints: number | null;
+  createdAt: string;
+}
+
+export interface DonorAllocation {
+  allocationId: number;
+  charityId: number;
+  charityName: string;
+  allocatedPoints: number;
+  remainingPoints: number;
+  status: string;
+  createdAt: string;
+}
+
 export interface PartnerProduct {
   id: number;
   sku: string;
@@ -126,4 +153,13 @@ export interface CreateCharityOrderInput {
   allocationId: number;
   partnerProductId: number;
   quantity: number;
+}
+
+export interface CreateMockPaymentInput {
+  amountKrw: number;
+}
+
+export interface CreateDonationAllocationInput {
+  charityId: number;
+  points: number;
 }

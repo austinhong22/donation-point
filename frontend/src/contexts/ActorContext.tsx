@@ -8,6 +8,7 @@ interface ActorContextValue {
   isLoading: boolean;
   errorMessage: string | null;
   selectActor: (actorId: number) => void;
+  refreshActors: () => Promise<void>;
 }
 
 const STORAGE_KEY = 'fair-donation-point-poc.actor-id';
@@ -20,27 +21,30 @@ export function ActorProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadActors() {
-      setIsLoading(true);
+  async function loadActors() {
+    setIsLoading(true);
 
-      try {
-        const nextActors = await listDemoActors();
-        const storedActorId = Number(window.localStorage.getItem(STORAGE_KEY));
-        const fallbackActorId = nextActors[0]?.id ?? null;
-        const resolvedActorId = nextActors.some((actor) => actor.id === storedActorId) ? storedActorId : fallbackActorId;
+    try {
+      const nextActors = await listDemoActors();
+      const storedActorId = Number(window.localStorage.getItem(STORAGE_KEY));
+      const currentSelectedActorId = selectedActorId ?? storedActorId;
+      const fallbackActorId = nextActors[0]?.id ?? null;
+      const resolvedActorId = nextActors.some((actor) => actor.id === currentSelectedActorId)
+        ? currentSelectedActorId
+        : fallbackActorId;
 
-        setActors(nextActors);
-        setSelectedActorId(resolvedActorId);
-        setErrorMessage(null);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Could not load demo actors.';
-        setErrorMessage(message);
-      } finally {
-        setIsLoading(false);
-      }
+      setActors(nextActors);
+      setSelectedActorId(resolvedActorId);
+      setErrorMessage(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not load demo actors.';
+      setErrorMessage(message);
+    } finally {
+      setIsLoading(false);
     }
+  }
 
+  useEffect(() => {
     void loadActors();
   }, []);
 
@@ -62,6 +66,7 @@ export function ActorProvider({ children }: { children: ReactNode }) {
         isLoading,
         errorMessage,
         selectActor: setSelectedActorId,
+        refreshActors: loadActors,
       }}
     >
       {children}

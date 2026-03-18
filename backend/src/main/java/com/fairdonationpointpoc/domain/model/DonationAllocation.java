@@ -53,6 +53,26 @@ public class DonationAllocation {
     protected DonationAllocation() {
     }
 
+    public DonationAllocation(
+        User donor,
+        Charity charity,
+        PointAccount donorPointAccount,
+        PointAccount charityPointAccount,
+        long allocatedPoints,
+        long remainingPoints,
+        DonationAllocationStatus status,
+        LocalDateTime createdAt
+    ) {
+        this.donor = donor;
+        this.charity = charity;
+        this.donorPointAccount = donorPointAccount;
+        this.charityPointAccount = charityPointAccount;
+        this.allocatedPoints = allocatedPoints;
+        this.remainingPoints = remainingPoints;
+        this.status = status;
+        this.createdAt = createdAt;
+    }
+
     public Long getId() {
         return id;
     }

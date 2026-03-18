@@ -64,6 +64,107 @@ class FairDonationPointPocApplicationTests {
     }
 
     @Test
+    void donorListsDashboardPaymentsAndAllocations() throws Exception {
+        mockMvc.perform(get("/api/v1/donor/me/dashboard").header("X-Actor-Id", "101"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.pointBalance", is(30000)))
+            .andExpect(jsonPath("$.totalConvertedPoints", is(120000)))
+            .andExpect(jsonPath("$.totalAllocatedPoints", is(90000)))
+            .andExpect(jsonPath("$.pendingPayments", is(0)))
+            .andExpect(jsonPath("$.activeAllocations", is(2)));
+
+        mockMvc.perform(get("/api/v1/donor/me/payments").header("X-Actor-Id", "101"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].paymentId", is(6001)))
+            .andExpect(jsonPath("$[0].status", is("CONVERTED")))
+            .andExpect(jsonPath("$[0].convertedPoints", is(120000)));
+
+        mockMvc.perform(get("/api/v1/donor/me/allocations").header("X-Actor-Id", "101"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(2)))
+            .andExpect(jsonPath("$[0].allocationId", is(9002)))
+            .andExpect(jsonPath("$[1].allocationId", is(9001)));
+    }
+
+    @Test
+    void donorCreatesMockPaymentAndConvertsItIntoPoints() throws Exception {
+        mockMvc.perform(post("/api/v1/donor/payments")
+                .header("X-Actor-Id", "101")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "amountKrw": 50000
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.paymentId", is(6002)))
+            .andExpect(jsonPath("$.status", is("RECEIVED")))
+            .andExpect(jsonPath("$.amountKrw", is(50000)));
+
+        mockMvc.perform(post("/api/v1/donor/payments/6002/convert")
+                .header("X-Actor-Id", "101"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.paymentId", is(6002)))
+            .andExpect(jsonPath("$.status", is("CONVERTED")))
+            .andExpect(jsonPath("$.convertedPoints", is(50000)));
+
+        mockMvc.perform(get("/api/v1/donor/me/dashboard").header("X-Actor-Id", "101"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.pointBalance", is(80000)))
+            .andExpect(jsonPath("$.totalConvertedPoints", is(170000)))
+            .andExpect(jsonPath("$.pendingPayments", is(0)));
+    }
+
+    @Test
+    void donorCreatesAllocationAndItAppearsInHistoryAndTrace() throws Exception {
+        mockMvc.perform(post("/api/v1/donor/allocations")
+                .header("X-Actor-Id", "101")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "charityId": 1001,
+                      "points": 10000
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.allocationId", is(9003)))
+            .andExpect(jsonPath("$.charityId", is(1001)))
+            .andExpect(jsonPath("$.allocatedPoints", is(10000)))
+            .andExpect(jsonPath("$.remainingPoints", is(10000)));
+
+        mockMvc.perform(get("/api/v1/donor/me/dashboard").header("X-Actor-Id", "101"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.pointBalance", is(20000)))
+            .andExpect(jsonPath("$.totalAllocatedPoints", is(100000)))
+            .andExpect(jsonPath("$.activeAllocations", is(3)));
+
+        mockMvc.perform(get("/api/v1/allocations/9003/detail"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.allocationId", is(9003)))
+            .andExpect(jsonPath("$.donorId", is(101)))
+            .andExpect(jsonPath("$.charityId", is(1001)))
+            .andExpect(jsonPath("$.allocatedPoints", is(10000)))
+            .andExpect(jsonPath("$.remainingPoints", is(10000)));
+    }
+
+    @Test
+    void donorCannotAllocateMoreThanAvailableBalance() throws Exception {
+        mockMvc.perform(post("/api/v1/donor/allocations")
+                .header("X-Actor-Id", "101")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "charityId": 1001,
+                      "points": 30001
+                    }
+                    """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errorCode", is("INVALID_REQUEST")))
+            .andExpect(jsonPath("$.message", is("Allocation points exceed donor balance.")));
+    }
+
+    @Test
     void returnsStructuredErrorForUnknownActorHeader() throws Exception {
         mockMvc.perform(get("/api/v1/charities").header("X-Actor-Id", "999999"))
             .andExpect(status().isNotFound())
