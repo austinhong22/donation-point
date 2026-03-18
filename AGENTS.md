@@ -47,3 +47,29 @@ Show this full flow clearly:
 - frontend: build
 - main demo path must work end-to-end locally
 
+## Working Agreements
+
+- Keep this repository local-only and demo-first.
+- Use a single Spring Boot backend and a single React frontend.
+- Prefer simple layered architecture over generic frameworks or abstractions.
+- Keep mock integrations explicit and easy to replace later.
+- Preserve clear state transitions and append-only ledger thinking in backend design.
+
+## Roles
+
+- `DONOR`
+- `CHARITY_MANAGER`
+- `ADMIN`
+
+## Repo Conventions
+
+- Backend lives in `backend/` and uses Gradle.
+- Frontend lives in `frontend/` and uses React + TypeScript + Vite.
+- MySQL runs through `docker-compose.yml`.
+- Seed/demo data is expected so the main demo path is always runnable locally.
+
+## Skill Routing
+
+- Use `.agents/skills/backend-poc-feature/` for backend domain, API, DB, validation, transaction, and test work.
+- Use `.agents/skills/frontend-poc-flow/` for frontend pages, routing, API client, UX flow, and timeline work.
+- Use `.agents/skills/poc-reviewer/` for correctness, integrity, validation, missing tests, and demo-readiness reviews.

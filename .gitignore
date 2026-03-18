@@ -2,6 +2,7 @@
 .idea/
 .vscode/
 *.iml
+.gradle-cache/
 
 # Logs
 logs/
@@ -20,6 +21,7 @@ backend/.gradle/
 backend/build/
 backend/out/
 backend/target/
+backend/bin/
 backend/.classpath
 backend/.project
 backend/.settings/
@@ -32,9 +34,16 @@ frontend/.next/
 frontend/.parcel-cache/
 frontend/.vite/
 frontend/coverage/
+frontend/.eslintcache
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+frontend/vite.config.js.map
 
 # Runtime
 tmp/
 temp/
 *.pid
 
+# Docker
+mysql-data/
