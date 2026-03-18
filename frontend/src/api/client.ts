@@ -1,0 +1,147 @@
+import axios from 'axios';
+import type {
+  AdminDashboard,
+  AdminOrder,
+  AllocationDetail,
+  ApiErrorPayload,
+  Charity,
+  CharityAllocationSummary,
+  CharityOrder,
+  CreateCharityOrderInput,
+  DemoActor,
+  PartnerProduct,
+} from './types';
+
+const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? '',
+  timeout: 10000,
+});
+
+let actorIdHeader: number | null = null;
+
+apiClient.interceptors.request.use((config) => {
+  if (actorIdHeader) {
+    config.headers['X-Actor-Id'] = String(actorIdHeader);
+  }
+
+  return config;
+});
+
+export class ApiClientError extends Error {
+  status: number | null;
+  errorCode: string;
+  fieldErrors: ApiErrorPayload['fieldErrors'];
+
+  constructor(payload?: Partial<ApiErrorPayload>) {
+    super(payload?.message ?? 'The request could not be completed.');
+    this.name = 'ApiClientError';
+    this.status = payload?.status ?? null;
+    this.errorCode = payload?.errorCode ?? 'UNKNOWN_ERROR';
+    this.fieldErrors = payload?.fieldErrors ?? [];
+  }
+}
+
+function mapError(error: unknown): never {
+  if (axios.isAxiosError<ApiErrorPayload>(error) && error.response?.data) {
+    throw new ApiClientError(error.response.data);
+  }
+
+  throw new ApiClientError({
+    message: 'Unable to reach the backend. Check that the Spring Boot app is running.',
+    errorCode: 'NETWORK_ERROR',
+  });
+}
+
+export function setApiActorId(actorId: number | null) {
+  actorIdHeader = actorId;
+}
+
+export async function listDemoActors() {
+  try {
+    const response = await apiClient.get<DemoActor[]>('/api/v1/demo/actors');
+    return response.data;
+  } catch (error) {
+    mapError(error);
+  }
+}
+
+export async function listCharities() {
+  try {
+    const response = await apiClient.get<Charity[]>('/api/v1/charities');
+    return response.data;
+  } catch (error) {
+    mapError(error);
+  }
+}
+
+export async function listPartnerProducts() {
+  try {
+    const response = await apiClient.get<PartnerProduct[]>('/api/v1/partner-products');
+    return response.data;
+  } catch (error) {
+    mapError(error);
+  }
+}
+
+export async function listMyAllocations() {
+  try {
+    const response = await apiClient.get<CharityAllocationSummary[]>('/api/v1/charity/me/allocations');
+    return response.data;
+  } catch (error) {
+    mapError(error);
+  }
+}
+
+export async function listMyOrders() {
+  try {
+    const response = await apiClient.get<CharityOrder[]>('/api/v1/charity/me/orders');
+    return response.data;
+  } catch (error) {
+    mapError(error);
+  }
+}
+
+export async function createCharityOrder(input: CreateCharityOrderInput) {
+  try {
+    const response = await apiClient.post<CharityOrder>('/api/v1/charity/orders', input);
+    return response.data;
+  } catch (error) {
+    mapError(error);
+  }
+}
+
+export async function getAllocationDetail(allocationId: number) {
+  try {
+    const response = await apiClient.get<AllocationDetail>(`/api/v1/allocations/${allocationId}/detail`);
+    return response.data;
+  } catch (error) {
+    mapError(error);
+  }
+}
+
+export async function getAdminDashboard() {
+  try {
+    const response = await apiClient.get<AdminDashboard>('/api/v1/admin/dashboard');
+    return response.data;
+  } catch (error) {
+    mapError(error);
+  }
+}
+
+export async function getAdminOrders() {
+  try {
+    const response = await apiClient.get<AdminOrder[]>('/api/v1/admin/orders');
+    return response.data;
+  } catch (error) {
+    mapError(error);
+  }
+}
+
+export async function completeAdminOrder(orderId: number) {
+  try {
+    const response = await apiClient.patch<AdminOrder>(`/api/v1/admin/orders/${orderId}/complete`);
+    return response.data;
+  } catch (error) {
+    mapError(error);
+  }
+}
