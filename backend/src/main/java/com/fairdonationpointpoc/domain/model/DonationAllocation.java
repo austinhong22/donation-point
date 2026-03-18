@@ -88,4 +88,18 @@ public class DonationAllocation {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
+
+    public void spendPoints(long pointsToSpend) {
+        if (pointsToSpend <= 0) {
+            throw new IllegalArgumentException("Points to spend must be positive.");
+        }
+        if (pointsToSpend > remainingPoints) {
+            throw new IllegalArgumentException("Order points exceed allocation remaining points.");
+        }
+
+        remainingPoints -= pointsToSpend;
+        if (remainingPoints == 0) {
+            status = DonationAllocationStatus.FULLY_SPENT;
+        }
+    }
 }

@@ -2,6 +2,8 @@ package com.fairdonationpointpoc.common.web;
 
 import com.fairdonationpointpoc.common.api.ApiErrorField;
 import com.fairdonationpointpoc.common.api.ApiErrorResponse;
+import com.fairdonationpointpoc.common.exception.AccessDeniedException;
+import com.fairdonationpointpoc.common.exception.AuthenticationRequiredException;
 import com.fairdonationpointpoc.common.exception.InvalidRequestException;
 import com.fairdonationpointpoc.common.exception.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,6 +27,22 @@ public class ApiExceptionHandler {
         HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", exception.getMessage(), request, List.of());
+    }
+
+    @ExceptionHandler(AuthenticationRequiredException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnauthorized(
+        AuthenticationRequiredException exception,
+        HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, "AUTHENTICATION_REQUIRED", exception.getMessage(), request, List.of());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleForbidden(
+        AccessDeniedException exception,
+        HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.FORBIDDEN, "ACCESS_DENIED", exception.getMessage(), request, List.of());
     }
 
     @ExceptionHandler({

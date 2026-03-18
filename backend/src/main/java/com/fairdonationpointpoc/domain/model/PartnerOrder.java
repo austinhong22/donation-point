@@ -56,6 +56,26 @@ public class PartnerOrder {
     protected PartnerOrder() {
     }
 
+    public PartnerOrder(
+        Charity charity,
+        User charityManager,
+        PartnerProduct partnerProduct,
+        DonationAllocation donationAllocation,
+        int quantity,
+        long totalPoints,
+        PartnerOrderStatus status,
+        LocalDateTime createdAt
+    ) {
+        this.charity = charity;
+        this.charityManager = charityManager;
+        this.partnerProduct = partnerProduct;
+        this.donationAllocation = donationAllocation;
+        this.quantity = quantity;
+        this.totalPoints = totalPoints;
+        this.status = status;
+        this.createdAt = createdAt;
+    }
+
     public Long getId() {
         return id;
     }
@@ -94,5 +114,10 @@ public class PartnerOrder {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public void markFulfilled(LocalDateTime fulfilledAt) {
+        this.status = PartnerOrderStatus.FULFILLED;
+        this.fulfilledAt = fulfilledAt;
     }
 }

@@ -47,6 +47,24 @@ public class PointLedgerEntry {
     protected PointLedgerEntry() {
     }
 
+    public PointLedgerEntry(
+        PointAccount pointAccount,
+        PointLedgerEntryType entryType,
+        long pointsDelta,
+        String referenceType,
+        Long referenceId,
+        String description,
+        LocalDateTime createdAt
+    ) {
+        this.pointAccount = pointAccount;
+        this.entryType = entryType;
+        this.pointsDelta = pointsDelta;
+        this.referenceType = referenceType;
+        this.referenceId = referenceId;
+        this.description = description;
+        this.createdAt = createdAt;
+    }
+
     public Long getId() {
         return id;
     }

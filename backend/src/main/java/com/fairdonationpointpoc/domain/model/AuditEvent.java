@@ -41,6 +41,22 @@ public class AuditEvent {
     protected AuditEvent() {
     }
 
+    public AuditEvent(
+        User actorUser,
+        String targetType,
+        Long targetId,
+        String action,
+        String eventData,
+        LocalDateTime createdAt
+    ) {
+        this.actorUser = actorUser;
+        this.targetType = targetType;
+        this.targetId = targetId;
+        this.action = action;
+        this.eventData = eventData;
+        this.createdAt = createdAt;
+    }
+
     public Long getId() {
         return id;
     }
