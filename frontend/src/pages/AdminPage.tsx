@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { completeAdminOrder, getAdminDashboard, getAdminOrders, getAllocationDetail } from '../api/client';
 import type { AdminDashboard, AdminOrder, AllocationDetail } from '../api/types';
-import { SurfaceCard } from '../components/ui/SurfaceCard';
-import { SectionHeader } from '../components/ui/SectionHeader';
+import { AllocationTraceCard } from '../components/detail/AllocationTraceCard';
+import { DataTable } from '../components/ui/DataTable';
 import { ErrorState } from '../components/ui/ErrorState';
 import { LoadingState } from '../components/ui/LoadingState';
-import { DataTable } from '../components/ui/DataTable';
+import { SectionHeader } from '../components/ui/SectionHeader';
 import { StatusBadge } from '../components/ui/StatusBadge';
-import { AllocationTraceCard } from '../components/detail/AllocationTraceCard';
+import { SurfaceCard } from '../components/ui/SurfaceCard';
 import { useActor } from '../contexts/ActorContext';
 import { formatDateTime, formatPoints } from '../utils/format';
 import { roleToRoute } from '../utils/actors';
@@ -18,7 +18,7 @@ export function AdminPage() {
   const { currentActor, isLoading: actorLoading } = useActor();
   const [dashboard, setDashboard] = useState<AdminDashboard | null>(null);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
-  const [selectedAllocationId, setSelectedAllocationId] = useState<number | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [detail, setDetail] = useState<AllocationDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -33,7 +33,7 @@ export function AdminPage() {
 
       setDashboard(nextDashboard);
       setOrders(nextOrders);
-      setSelectedAllocationId((current) => current ?? nextOrders[0]?.allocationId ?? null);
+      setSelectedOrderId((current) => current ?? nextOrders[0]?.orderId ?? null);
       setErrorMessage(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not load admin data.';
@@ -51,13 +51,15 @@ export function AdminPage() {
     void loadAdminData();
   }, [actorLoading, currentActor?.role]);
 
+  const selectedOrder = orders.find((order) => order.orderId === selectedOrderId) ?? null;
+
   useEffect(() => {
-    if (!selectedAllocationId || currentActor?.role !== 'ADMIN') {
+    if (!selectedOrder || currentActor?.role !== 'ADMIN') {
       setDetail(null);
       return;
     }
 
-    const allocationId = selectedAllocationId;
+    const allocationId = selectedOrder.allocationId;
 
     async function loadDetail() {
       setDetailLoading(true);
@@ -74,7 +76,7 @@ export function AdminPage() {
     }
 
     void loadDetail();
-  }, [currentActor?.role, selectedAllocationId]);
+  }, [currentActor?.role, selectedOrder?.allocationId, selectedOrder?.orderId]);
 
   if (actorLoading) {
     return <LoadingState title="Preparing admin page" message="Loading actor context." />;
@@ -98,12 +100,9 @@ export function AdminPage() {
   return (
     <div className="page-stack">
       <SurfaceCard>
-        <SectionHeader title="Admin dashboard" description="Inspect request volume, active allocations, and completion progress." />
-
+        <SectionHeader title="Dashboard summary cards" description="Inspect queue size, active allocations, and fulfillment progress for the demo." />
         {isLoading ? (
-          <LoadingState title="Loading dashboard" message="Fetching seeded admin metrics and order queue." />
-        ) : errorMessage ? (
-          <ErrorState title="Dashboard unavailable" message={errorMessage} />
+          <LoadingState title="Loading dashboard" message="Fetching admin metrics and order queue." />
         ) : dashboard ? (
           <div className="stat-grid">
             <div className="stat-card">
@@ -130,15 +129,25 @@ export function AdminPage() {
         ) : null}
       </SurfaceCard>
 
+      {errorMessage ? <div className="page-banner page-banner-error">{errorMessage}</div> : null}
+
       <SurfaceCard>
-        <SectionHeader title="Partner order queue" description="Review order ownership, select an allocation trace, and complete fulfillment." />
+        <SectionHeader title="Orders table" description="See every order, which allocation funded it, and mark fulfillment complete." />
         {isLoading ? (
-          <LoadingState title="Loading orders" message="Preparing the admin queue." />
-        ) : errorMessage ? (
-          <ErrorState title="Orders unavailable" message={errorMessage} />
+          <LoadingState title="Loading orders" message="Preparing the admin order queue." />
         ) : (
           <DataTable
             columns={[
+              {
+                key: 'order',
+                header: 'Order',
+                render: (order) => `#${order.orderId}`,
+              },
+              {
+                key: 'allocation',
+                header: 'Funding allocation',
+                render: (order) => `#${order.allocationId}`,
+              },
               {
                 key: 'charity',
                 header: 'Charity',
@@ -153,11 +162,6 @@ export function AdminPage() {
                 key: 'product',
                 header: 'Product',
                 render: (order) => order.partnerProductName,
-              },
-              {
-                key: 'quantity',
-                header: 'Qty',
-                render: (order) => order.quantity,
               },
               {
                 key: 'totalPoints',
@@ -181,7 +185,7 @@ export function AdminPage() {
                   <div className="inline-actions">
                     <button
                       className="secondary-button"
-                      onClick={() => setSelectedAllocationId(order.allocationId)}
+                      onClick={() => setSelectedOrderId(order.orderId)}
                       type="button"
                     >
                       Inspect
@@ -195,7 +199,7 @@ export function AdminPage() {
                         try {
                           await completeAdminOrder(order.orderId);
                           await loadAdminData();
-                          setSelectedAllocationId(order.allocationId);
+                          setSelectedOrderId(order.orderId);
                           setErrorMessage(null);
                         } catch (error) {
                           const message = error instanceof Error ? error.message : 'Could not complete the order.';
@@ -220,13 +224,76 @@ export function AdminPage() {
         )}
       </SurfaceCard>
 
+      {selectedOrder ? (
+        <SurfaceCard>
+          <SectionHeader title="Order detail" description="Review order ownership and the donor allocation timeline that funded it." />
+          <div className="detail-summary-grid">
+            <div className="detail-summary-item">
+              <span>Order</span>
+              <strong>#{selectedOrder.orderId}</strong>
+            </div>
+            <div className="detail-summary-item">
+              <span>Funding allocation</span>
+              <strong>#{selectedOrder.allocationId}</strong>
+            </div>
+            <div className="detail-summary-item">
+              <span>Charity</span>
+              <strong>{selectedOrder.charityName}</strong>
+            </div>
+            <div className="detail-summary-item">
+              <span>Manager</span>
+              <strong>{selectedOrder.charityManagerName}</strong>
+            </div>
+            <div className="detail-summary-item">
+              <span>Requested product</span>
+              <strong>{selectedOrder.partnerProductName}</strong>
+            </div>
+            <div className="detail-summary-item">
+              <span>Order total</span>
+              <strong>{formatPoints(selectedOrder.totalPoints)}</strong>
+            </div>
+            <div className="detail-summary-item">
+              <span>Status</span>
+              <strong>
+                <StatusBadge status={selectedOrder.status} />
+              </strong>
+            </div>
+          </div>
+
+          <div className="detail-section">
+            <button
+              className="primary-button"
+              disabled={selectedOrder.status === 'FULFILLED' || submittingOrderId === selectedOrder.orderId}
+              onClick={async () => {
+                setSubmittingOrderId(selectedOrder.orderId);
+
+                try {
+                  await completeAdminOrder(selectedOrder.orderId);
+                  await loadAdminData();
+                  setSelectedOrderId(selectedOrder.orderId);
+                  setErrorMessage(null);
+                } catch (error) {
+                  const message = error instanceof Error ? error.message : 'Could not complete the order.';
+                  setErrorMessage(message);
+                } finally {
+                  setSubmittingOrderId(null);
+                }
+              }}
+              type="button"
+            >
+              {selectedOrder.status === 'FULFILLED' ? 'Fulfillment completed' : 'Mark fulfillment complete'}
+            </button>
+          </div>
+        </SurfaceCard>
+      ) : null}
+
       {detailLoading ? (
         <LoadingState title="Loading allocation trace" message="Fetching the end-to-end story behind the selected order." />
       ) : detail ? (
         <AllocationTraceCard detail={detail} />
       ) : (
         <SurfaceCard>
-          <SectionHeader title="Allocation detail" description="Select an order above to inspect its donor-to-fulfillment trace." />
+          <SectionHeader title="Allocation detail timeline" description="Select an order above to inspect the shared allocation trace and audit history." />
         </SurfaceCard>
       )}
     </div>

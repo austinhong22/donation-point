@@ -27,7 +27,7 @@ import { formatDateTime, formatPoints } from '../utils/format';
 
 export function CharityPage() {
   const navigate = useNavigate();
-  const { currentActor, isLoading: actorLoading } = useActor();
+  const { currentActor, isLoading: actorLoading, refreshActors } = useActor();
   const [allocations, setAllocations] = useState<CharityAllocationSummary[]>([]);
   const [orders, setOrders] = useState<CharityOrder[]>([]);
   const [products, setProducts] = useState<PartnerProduct[]>([]);
@@ -116,38 +116,61 @@ export function CharityPage() {
     );
   }
 
+  const selectedAllocation = allocations.find((allocation) => allocation.allocationId === selectedAllocationId) ?? null;
   const selectedProduct = products.find((product) => product.id === selectedProductId) ?? null;
   const orderPreviewPoints = selectedProduct ? selectedProduct.pointCost * quantity : 0;
+  const remainingBeforeOrder = selectedAllocation?.remainingPoints ?? 0;
+  const remainingAfterOrder = remainingBeforeOrder - orderPreviewPoints;
+  const totalRemainingPoints = allocations.reduce((sum, allocation) => sum + allocation.remainingPoints, 0);
+  const requestedOrders = orders.filter((order) => order.status !== 'FULFILLED').length;
+  const selectedAllocationOrderCount = selectedAllocation
+    ? orders.filter((order) => order.allocationId === selectedAllocation.allocationId).length
+    : 0;
+  const orderDisabled =
+    submitting ||
+    !selectedAllocationId ||
+    !selectedProductId ||
+    quantity < 1 ||
+    allocations.length === 0 ||
+    products.length === 0 ||
+    orderPreviewPoints > remainingBeforeOrder;
 
   return (
     <div className="page-stack">
       <SurfaceCard>
-        <SectionHeader title="Charity spending" description="Spend remaining allocation points on partner products for your charity." />
-
+        <SectionHeader title="Charity balance summary" description="Review received donor allocations and spend them on partner goods for your charity." />
         <div className="stat-grid">
           <div className="stat-card">
             <span>Managed charity</span>
             <strong>{currentActor.managedCharityId ? `#${currentActor.managedCharityId}` : 'Not linked'}</strong>
           </div>
           <div className="stat-card">
-            <span>Your visible balance</span>
-            <strong>{formatPoints(currentActor.pointBalance)}</strong>
+            <span>Total remaining points</span>
+            <strong>{formatPoints(totalRemainingPoints)}</strong>
           </div>
           <div className="stat-card">
-            <span>Order preview</span>
-            <strong>{formatPoints(orderPreviewPoints)}</strong>
+            <span>Received allocations</span>
+            <strong>{allocations.length}</strong>
+          </div>
+          <div className="stat-card">
+            <span>Open partner orders</span>
+            <strong>{requestedOrders}</strong>
+          </div>
+          <div className="stat-card">
+            <span>Selected allocation remaining</span>
+            <strong>{formatPoints(remainingBeforeOrder)}</strong>
           </div>
         </div>
       </SurfaceCard>
 
+      {errorMessage ? <div className="page-banner page-banner-error">{errorMessage}</div> : null}
+
       <div className="two-column-grid">
         <SurfaceCard>
-          <SectionHeader title="Create partner order" description="For this PoC, one order spends from one donation allocation only." />
+          <SectionHeader title="Create order from allocation" description="One order uses one selected donation allocation. Remaining points are shown before and after submit." />
 
           {isLoading ? (
-            <LoadingState title="Loading inputs" message="Fetching your allocations and partner catalog." />
-          ) : errorMessage ? (
-            <ErrorState title="Order form unavailable" message={errorMessage} />
+            <LoadingState title="Loading inputs" message="Fetching allocations and partner products." />
           ) : (
             <form
               className="form-stack"
@@ -168,6 +191,7 @@ export function CharityPage() {
                     quantity,
                   });
                   await loadCharityData();
+                  await refreshActors();
                   setSelectedAllocationId(selectedAllocationId);
                   setErrorMessage(null);
                 } catch (error) {
@@ -178,20 +202,20 @@ export function CharityPage() {
                 }
               }}
             >
-              <Field label="Donation allocation" hint="Only allocations for your charity are available.">
+              <Field label="Donation allocation" hint="Only allocations received by your charity are available.">
                 <select
                   value={selectedAllocationId ?? ''}
                   onChange={(event) => setSelectedAllocationId(Number(event.target.value))}
                 >
                   {allocations.map((allocation) => (
                     <option key={allocation.allocationId} value={allocation.allocationId}>
-                      {allocation.donorName} · remaining {formatPoints(allocation.remainingPoints)}
+                      #{allocation.allocationId} · {allocation.donorName} · remaining {formatPoints(allocation.remainingPoints)}
                     </option>
                   ))}
                 </select>
               </Field>
 
-              <Field label="Partner product" hint="Total points are calculated from unit point cost and quantity.">
+              <Field label="Partner product" hint="Order total points = unit point cost × quantity.">
                 <select
                   value={selectedProductId ?? ''}
                   onChange={(event) => setSelectedProductId(Number(event.target.value))}
@@ -213,12 +237,30 @@ export function CharityPage() {
                 />
               </Field>
 
-              <div className="form-preview">
-                <span>Projected spend</span>
-                <strong>{formatPoints(orderPreviewPoints)}</strong>
+              <div className="detail-summary-grid">
+                <div className="detail-summary-item">
+                  <span>Allocation funding this order</span>
+                  <strong>{selectedAllocation ? `#${selectedAllocation.allocationId}` : 'Choose an allocation'}</strong>
+                </div>
+                <div className="detail-summary-item">
+                  <span>Remaining before order</span>
+                  <strong>{formatPoints(remainingBeforeOrder)}</strong>
+                </div>
+                <div className="detail-summary-item">
+                  <span>Projected order spend</span>
+                  <strong>{formatPoints(orderPreviewPoints)}</strong>
+                </div>
+                <div className="detail-summary-item">
+                  <span>Remaining after order</span>
+                  <strong>{remainingAfterOrder >= 0 ? formatPoints(remainingAfterOrder) : 'Insufficient points'}</strong>
+                </div>
+                <div className="detail-summary-item">
+                  <span>Orders already funded by this allocation</span>
+                  <strong>{selectedAllocationOrderCount}</strong>
+                </div>
               </div>
 
-              <button className="primary-button" disabled={submitting || allocations.length === 0 || products.length === 0} type="submit">
+              <button className="primary-button" disabled={orderDisabled} type="submit">
                 {submitting ? 'Submitting order...' : 'Create order'}
               </button>
             </form>
@@ -226,7 +268,7 @@ export function CharityPage() {
         </SurfaceCard>
 
         <SurfaceCard>
-          <SectionHeader title="Partner catalog" description="Seeded products the charity manager can request with allocated points." />
+          <SectionHeader title="Partner product catalog" description="Seeded products that can be funded by received donation allocations." />
           {isLoading ? (
             <LoadingState title="Loading products" message="Fetching partner products." />
           ) : (
@@ -246,14 +288,17 @@ export function CharityPage() {
       </div>
 
       <SurfaceCard>
-        <SectionHeader title="My allocations" description="Review donor allocations, remaining points, and open the trace detail below." />
+        <SectionHeader title="Received allocations" description="See each donor allocation, remaining points, and which trace to inspect below." />
         {isLoading ? (
-          <LoadingState title="Loading allocations" message="Fetching allocations for your charity." />
-        ) : errorMessage ? (
-          <ErrorState title="Allocations unavailable" message={errorMessage} />
+          <LoadingState title="Loading allocations" message="Fetching received allocations for your charity." />
         ) : (
           <DataTable
             columns={[
+              {
+                key: 'allocation',
+                header: 'Allocation',
+                render: (allocation) => `#${allocation.allocationId}`,
+              },
               {
                 key: 'donorName',
                 header: 'Donor',
@@ -270,14 +315,14 @@ export function CharityPage() {
                 render: (allocation) => formatPoints(allocation.remainingPoints),
               },
               {
+                key: 'fundedOrders',
+                header: 'Funded orders',
+                render: (allocation) => orders.filter((order) => order.allocationId === allocation.allocationId).length,
+              },
+              {
                 key: 'status',
                 header: 'Status',
                 render: (allocation) => <StatusBadge status={allocation.status} />,
-              },
-              {
-                key: 'createdAt',
-                header: 'Created',
-                render: (allocation) => formatDateTime(allocation.createdAt),
               },
               {
                 key: 'action',
@@ -302,14 +347,17 @@ export function CharityPage() {
       </SurfaceCard>
 
       <SurfaceCard>
-        <SectionHeader title="My partner orders" description="Orders requested by this charity manager, including fulfillment status." />
+        <SectionHeader title="Charity order history" description="See which allocation funded which order and how much each order spent." />
         {isLoading ? (
-          <LoadingState title="Loading orders" message="Fetching charity orders." />
-        ) : errorMessage ? (
-          <ErrorState title="Orders unavailable" message={errorMessage} />
+          <LoadingState title="Loading orders" message="Fetching charity order history." />
         ) : (
           <DataTable
             columns={[
+              {
+                key: 'allocation',
+                header: 'Funding allocation',
+                render: (order) => `#${order.allocationId}`,
+              },
               {
                 key: 'product',
                 header: 'Product',
@@ -335,11 +383,24 @@ export function CharityPage() {
                 header: 'Requested',
                 render: (order) => formatDateTime(order.createdAt),
               },
+              {
+                key: 'action',
+                header: 'Action',
+                render: (order) => (
+                  <button
+                    className="secondary-button"
+                    onClick={() => setSelectedAllocationId(order.allocationId)}
+                    type="button"
+                  >
+                    Open allocation
+                  </button>
+                ),
+              },
             ]}
             rows={orders}
             rowKey={(order) => order.orderId}
             emptyTitle="No orders yet"
-            emptyMessage="Create the first partner order from an available allocation."
+            emptyMessage="Create the first partner order from a received allocation."
           />
         )}
       </SurfaceCard>
@@ -350,7 +411,7 @@ export function CharityPage() {
         <AllocationTraceCard detail={detail} />
       ) : (
         <SurfaceCard>
-          <SectionHeader title="Allocation detail" description="Select an allocation above to inspect its end-to-end trace." />
+          <SectionHeader title="Allocation detail" description="Select an allocation above to inspect its shared timeline and order trace." />
         </SurfaceCard>
       )}
     </div>
