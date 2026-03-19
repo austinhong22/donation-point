@@ -1,5 +1,6 @@
 import type { DemoActor } from '../../api/types';
 import { formatRoleLabel } from '../../utils/actors';
+import { formatActorDisplayName } from '../../utils/format';
 
 interface ActorSwitcherProps {
   actors: DemoActor[];
@@ -16,7 +17,7 @@ export function ActorSwitcher({
 }: ActorSwitcherProps) {
   return (
     <label className="actor-switcher">
-      <span>Actor</span>
+      <span>역할 선택</span>
       <select
         value={currentActorId ?? ''}
         onChange={(event) => onSelect(Number(event.target.value))}
@@ -24,7 +25,7 @@ export function ActorSwitcher({
       >
         {actors.map((actor) => (
           <option key={actor.id} value={actor.id}>
-            {actor.displayName} · {formatRoleLabel(actor.role)}
+            {formatActorDisplayName(actor.displayName)} · {formatRoleLabel(actor.role)}
           </option>
         ))}
       </select>

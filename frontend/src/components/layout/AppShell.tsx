@@ -1,12 +1,13 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useActor } from '../../contexts/ActorContext';
 import { formatRoleLabel, roleToRoute } from '../../utils/actors';
+import { formatActorDisplayName } from '../../utils/format';
 import { ActorSwitcher } from './ActorSwitcher';
 
 const navItems = [
-  { to: '/donor', label: 'Donor' },
-  { to: '/charity', label: 'Charity manager' },
-  { to: '/admin', label: 'Admin' },
+  { to: '/donor', label: '후원자' },
+  { to: '/charity', label: '기부처 담당자' },
+  { to: '/admin', label: '운영자' },
 ];
 
 export function AppShell() {
@@ -18,10 +19,10 @@ export function AppShell() {
     <div className="shell">
       <header className="shell-header">
         <div>
-          <p className="shell-kicker">Fair Donation Point PoC</p>
-          <h1>Local demo console</h1>
+          <p className="shell-kicker">공정 기부 포인트 개념 검증</p>
+          <h1>로컬 데모 콘솔</h1>
           <p className="shell-copy">
-            Explore the seeded donor, charity manager, and admin flow using the backend demo APIs.
+            시드 데이터로 준비된 후원자, 기부처 담당자, 운영자 흐름을 한글 화면으로 확인할 수 있습니다.
           </p>
         </div>
 
@@ -37,14 +38,15 @@ export function AppShell() {
             }}
           />
           <div className="actor-summary">
-            <span>Current role</span>
-            <strong>{currentActor ? formatRoleLabel(currentActor.role) : 'Loading'}</strong>
-            <small>{currentActor?.email ?? 'Waiting for actor data'}</small>
+            <span>현재 역할</span>
+            <strong>{currentActor ? formatRoleLabel(currentActor.role) : '불러오는 중'}</strong>
+            <small>{currentActor ? formatActorDisplayName(currentActor.displayName) : '역할 정보를 기다리는 중입니다.'}</small>
+            <small>{currentActor ? '데모 계정이 연결되어 있습니다.' : '역할 정보를 기다리는 중입니다.'}</small>
           </div>
         </div>
       </header>
 
-      <nav className="top-nav" aria-label="Primary">
+      <nav className="top-nav" aria-label="주요 메뉴">
         {navItems.map((item) => (
           <NavLink
             key={item.to}

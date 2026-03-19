@@ -16,6 +16,7 @@ import type {
   DonorPayment,
   PartnerProduct,
 } from './types';
+import { formatApiErrorMessage } from '../utils/format';
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? '',
@@ -38,7 +39,7 @@ export class ApiClientError extends Error {
   fieldErrors: ApiErrorPayload['fieldErrors'];
 
   constructor(payload?: Partial<ApiErrorPayload>) {
-    super(payload?.message ?? 'The request could not be completed.');
+    super(formatApiErrorMessage(payload?.message ?? 'The request could not be completed.', payload?.errorCode));
     this.name = 'ApiClientError';
     this.status = payload?.status ?? null;
     this.errorCode = payload?.errorCode ?? 'UNKNOWN_ERROR';

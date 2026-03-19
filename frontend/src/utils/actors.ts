@@ -14,12 +14,12 @@ export function roleToRoute(role?: ActorRole) {
 
 export function formatRoleLabel(role: ActorRole) {
   if (role === 'CHARITY_MANAGER') {
-    return 'Charity Manager';
+    return '기부처 담당자';
   }
 
   if (role === 'ADMIN') {
-    return 'Admin';
+    return '운영자';
   }
 
-  return 'Donor';
+  return '후원자';
 }

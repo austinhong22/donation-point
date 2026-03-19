@@ -20,8 +20,8 @@ export function DataTable<T>({
   columns,
   rows,
   rowKey,
-  emptyTitle = 'Nothing to show yet',
-  emptyMessage = 'The backend returned an empty result for this section.',
+  emptyTitle = '표시할 내용이 없습니다',
+  emptyMessage = '이 영역에 아직 표시할 데이터가 없습니다.',
 }: DataTableProps<T>) {
   if (rows.length === 0) {
     return <EmptyState title={emptyTitle} message={emptyMessage} />;

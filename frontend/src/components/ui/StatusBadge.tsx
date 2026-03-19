@@ -1,3 +1,5 @@
+import { formatStatusLabel } from '../../utils/format';
+
 interface StatusBadgeProps {
   status: string;
   tone?: 'default' | 'neutral';
@@ -17,5 +19,5 @@ export function StatusBadge({ status, tone = 'default' }: StatusBadgeProps) {
     variant = 'badge-red';
   }
 
-  return <span className={`status-badge ${variant}`}>{status.split('_').join(' ')}</span>;
+  return <span className={`status-badge ${variant}`}>{formatStatusLabel(status)}</span>;
 }

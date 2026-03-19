@@ -37,7 +37,7 @@ export function ActorProvider({ children }: { children: ReactNode }) {
       setSelectedActorId(resolvedActorId);
       setErrorMessage(null);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Could not load demo actors.';
+      const message = error instanceof Error ? error.message : '데모 역할 정보를 불러오지 못했습니다.';
       setErrorMessage(message);
     } finally {
       setIsLoading(false);

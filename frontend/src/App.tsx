@@ -11,7 +11,7 @@ function ActorHomeRedirect() {
   const { currentActor, isLoading } = useActor();
 
   if (isLoading) {
-    return <LoadingState title="Preparing the demo" message="Loading seeded actors and routes." />;
+    return <LoadingState title="데모 화면 준비 중" message="시드 역할과 기본 경로를 불러오고 있습니다." />;
   }
 
   return <Navigate to={roleToRoute(currentActor?.role)} replace />;
