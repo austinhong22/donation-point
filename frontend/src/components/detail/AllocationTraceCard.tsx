@@ -1,5 +1,11 @@
 import type { AllocationDetail } from '../../api/types';
-import { formatDateTime, formatPoints } from '../../utils/format';
+import {
+  formatAuditAction,
+  formatAuditEventData,
+  formatAuditTargetType,
+  formatDateTime,
+  formatPoints,
+} from '../../utils/format';
 import { DataTable } from '../ui/DataTable';
 import { EmptyState } from '../ui/EmptyState';
 import { SectionHeader } from '../ui/SectionHeader';
@@ -95,16 +101,16 @@ export function AllocationTraceCard({ detail }: AllocationTraceCardProps) {
             {detail.auditEvents.map((event) => (
               <article className="timeline-entry" key={`${event.createdAt}-${event.action}-${event.targetId}`}>
                 <div className="timeline-entry-meta">
-                  <StatusBadge status={event.targetType} tone="neutral" />
+                  <StatusBadge status={formatAuditTargetType(event.targetType)} tone="neutral" />
                   <span>{formatDateTime(event.createdAt)}</span>
                 </div>
-                <strong>{event.action}</strong>
+                <strong>{formatAuditAction(event.action)}</strong>
                 <p>
                   {event.actorDisplayName ? `${event.actorDisplayName} performed this action.` : 'System recorded this action.'}
                 </p>
                 <p className="timeline-entry-note">
-                  Target #{event.targetId}
-                  {event.eventData ? ` • ${event.eventData}` : ''}
+                  {formatAuditTargetType(event.targetType)} #{event.targetId}
+                  {formatAuditEventData(event.eventData) ? ` • ${formatAuditEventData(event.eventData)}` : ''}
                 </p>
               </article>
             ))}

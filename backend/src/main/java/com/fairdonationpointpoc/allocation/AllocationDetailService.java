@@ -6,6 +6,7 @@ import com.fairdonationpointpoc.domain.repository.DonationAllocationRepository;
 import com.fairdonationpointpoc.domain.repository.PartnerOrderRepository;
 import com.fairdonationpointpoc.domain.repository.PointConversionRepository;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -54,11 +55,24 @@ public class AllocationDetailService {
             .map(AllocationOrderTraceResponse::orderId)
             .collect(Collectors.toSet());
 
-        List<AllocationAuditEventResponse> auditEvents = auditEventRepository.findAllByOrderByCreatedAtAsc().stream()
+        var allAuditEvents = auditEventRepository.findAllByOrderByCreatedAtAsc();
+
+        Map<String, com.fairdonationpointpoc.domain.model.AuditEvent> latestFundingEvents = allAuditEvents.stream()
+            .filter(event -> event.getActorUser() != null)
+            .filter(event -> allocation.getDonor().getId().equals(event.getActorUser().getId()))
+            .filter(event -> event.getCreatedAt().isBefore(allocation.getCreatedAt()) || event.getCreatedAt().isEqual(allocation.getCreatedAt()))
+            .filter(event -> "PAYMENT".equals(event.getTargetType()) || "POINT_CONVERSION".equals(event.getTargetType()))
+            .collect(Collectors.toMap(
+                com.fairdonationpointpoc.domain.model.AuditEvent::getTargetType,
+                event -> event,
+                (left, right) -> right
+            ));
+
+        List<AllocationAuditEventResponse> auditEvents = allAuditEvents.stream()
             .filter(event ->
                 ("DONATION_ALLOCATION".equals(event.getTargetType()) && allocationId.equals(event.getTargetId()))
-                    || ("PAYMENT".equals(event.getTargetType()) && allocation.getDonor().getId().equals(event.getActorUser() == null ? null : event.getActorUser().getId()))
                     || ("PARTNER_ORDER".equals(event.getTargetType()) && partnerOrderIds.contains(event.getTargetId()))
+                    || latestFundingEvents.values().stream().anyMatch(fundingEvent -> fundingEvent.getId().equals(event.getId()))
             )
             .map(event -> new AllocationAuditEventResponse(
                 event.getCreatedAt(),

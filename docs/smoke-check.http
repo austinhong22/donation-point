@@ -1,0 +1,55 @@
+### Shared actors
+GET http://localhost:8080/api/v1/demo/actors
+
+### Donor dashboard
+GET http://localhost:8080/api/v1/donor/me/dashboard
+X-Actor-Id: 101
+
+### Create mock payment
+POST http://localhost:8080/api/v1/donor/payments
+Content-Type: application/json
+X-Actor-Id: 101
+
+{
+  "amountKrw": 50000
+}
+
+### Convert the newly created payment
+POST http://localhost:8080/api/v1/donor/payments/6002/convert
+X-Actor-Id: 101
+
+### Create donation allocation
+POST http://localhost:8080/api/v1/donor/allocations
+Content-Type: application/json
+X-Actor-Id: 101
+
+{
+  "charityId": 1001,
+  "points": 10000
+}
+
+### Charity manager allocations
+GET http://localhost:8080/api/v1/charity/me/allocations
+X-Actor-Id: 201
+
+### Charity manager creates partner order from one allocation
+POST http://localhost:8080/api/v1/charity/orders
+Content-Type: application/json
+X-Actor-Id: 201
+
+{
+  "allocationId": 9003,
+  "partnerProductId": 2001,
+  "quantity": 1
+}
+
+### Admin orders queue
+GET http://localhost:8080/api/v1/admin/orders
+X-Actor-Id: 301
+
+### Admin completes a partner order
+PATCH http://localhost:8080/api/v1/admin/orders/10002/complete
+X-Actor-Id: 301
+
+### Allocation detail timeline
+GET http://localhost:8080/api/v1/allocations/9003/detail

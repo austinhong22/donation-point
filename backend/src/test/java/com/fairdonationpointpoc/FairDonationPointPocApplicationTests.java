@@ -211,7 +211,7 @@ class FairDonationPointPocApplicationTests {
             .andExpect(jsonPath("$.remainingPoints", is(0)))
             .andExpect(jsonPath("$.status", is("FULLY_SPENT")))
             .andExpect(jsonPath("$.relatedPartnerOrders", hasSize(2)))
-            .andExpect(jsonPath("$.auditEvents", hasSize(4)));
+            .andExpect(jsonPath("$.auditEvents", hasSize(5)));
     }
 
     @Test
@@ -282,9 +282,10 @@ class FairDonationPointPocApplicationTests {
             .andExpect(jsonPath("$.remainingPoints", is(20000)))
             .andExpect(jsonPath("$.relatedPartnerOrders", hasSize(1)))
             .andExpect(jsonPath("$.relatedPartnerOrders[0].orderId", is(10001)))
-            .andExpect(jsonPath("$.auditEvents", hasSize(3)))
+            .andExpect(jsonPath("$.auditEvents", hasSize(4)))
             .andExpect(jsonPath("$.auditEvents[0].action", is("PAYMENT_RECEIVED")))
-            .andExpect(jsonPath("$.auditEvents[1].action", is("ALLOCATION_CREATED")))
-            .andExpect(jsonPath("$.auditEvents[2].action", is("PARTNER_ORDER_REQUESTED")));
+            .andExpect(jsonPath("$.auditEvents[1].action", is("POINTS_CONVERTED")))
+            .andExpect(jsonPath("$.auditEvents[2].action", is("ALLOCATION_CREATED")))
+            .andExpect(jsonPath("$.auditEvents[3].action", is("PARTNER_ORDER_REQUESTED")));
     }
 }
