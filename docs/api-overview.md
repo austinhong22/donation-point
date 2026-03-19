@@ -13,7 +13,15 @@ Mock auth header for actor-scoped APIs:
 - `GET /api/v1/demo/actors`
 - `GET /api/v1/charities`
 - `GET /api/v1/partner-products`
+
+## Actor-Scoped Trace API
+
 - `GET /api/v1/allocations/{allocationId}/detail`
+  - requires `X-Actor-Id`
+  - allowed for:
+    - the donor who owns the allocation
+    - the charity manager of the allocated charity
+    - admin
 
 ## Donor APIs
 

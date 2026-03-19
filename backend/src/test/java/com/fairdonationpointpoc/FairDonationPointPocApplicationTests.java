@@ -139,13 +139,16 @@ class FairDonationPointPocApplicationTests {
             .andExpect(jsonPath("$.totalAllocatedPoints", is(100000)))
             .andExpect(jsonPath("$.activeAllocations", is(3)));
 
-        mockMvc.perform(get("/api/v1/allocations/9003/detail"))
+        mockMvc.perform(get("/api/v1/allocations/9003/detail").header("X-Actor-Id", "101"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.allocationId", is(9003)))
             .andExpect(jsonPath("$.donorId", is(101)))
             .andExpect(jsonPath("$.charityId", is(1001)))
             .andExpect(jsonPath("$.allocatedPoints", is(10000)))
-            .andExpect(jsonPath("$.remainingPoints", is(10000)));
+            .andExpect(jsonPath("$.remainingPoints", is(10000)))
+            .andExpect(jsonPath("$.auditEvents[0].action", is("PAYMENT_RECEIVED")))
+            .andExpect(jsonPath("$.auditEvents[1].action", is("POINTS_CONVERTED")))
+            .andExpect(jsonPath("$.auditEvents[2].action", is("ALLOCATION_CREATED")));
     }
 
     @Test
@@ -206,7 +209,7 @@ class FairDonationPointPocApplicationTests {
             .andExpect(jsonPath("$.totalPoints", is(20000)))
             .andExpect(jsonPath("$.status", is("REQUESTED")));
 
-        mockMvc.perform(get("/api/v1/allocations/9001/detail"))
+        mockMvc.perform(get("/api/v1/allocations/9001/detail").header("X-Actor-Id", "201"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.remainingPoints", is(0)))
             .andExpect(jsonPath("$.status", is("FULLY_SPENT")))
@@ -272,7 +275,7 @@ class FairDonationPointPocApplicationTests {
 
     @Test
     void allocationDetailShowsEndToEndTrace() throws Exception {
-        mockMvc.perform(get("/api/v1/allocations/9001/detail"))
+        mockMvc.perform(get("/api/v1/allocations/9001/detail").header("X-Actor-Id", "101"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.allocationId", is(9001)))
             .andExpect(jsonPath("$.donorId", is(101)))
@@ -287,5 +290,21 @@ class FairDonationPointPocApplicationTests {
             .andExpect(jsonPath("$.auditEvents[1].action", is("POINTS_CONVERTED")))
             .andExpect(jsonPath("$.auditEvents[2].action", is("ALLOCATION_CREATED")))
             .andExpect(jsonPath("$.auditEvents[3].action", is("PARTNER_ORDER_REQUESTED")));
+    }
+
+    @Test
+    void allocationDetailRequiresActorHeader() throws Exception {
+        mockMvc.perform(get("/api/v1/allocations/9001/detail"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.errorCode", is("AUTHENTICATION_REQUIRED")))
+            .andExpect(jsonPath("$.message", is("X-Actor-Id header is required.")));
+    }
+
+    @Test
+    void charityManagerCannotInspectAnotherCharitysAllocationDetail() throws Exception {
+        mockMvc.perform(get("/api/v1/allocations/9002/detail").header("X-Actor-Id", "201"))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.errorCode", is("ACCESS_DENIED")))
+            .andExpect(jsonPath("$.message", is("Actor does not have permission to view this allocation detail.")));
     }
 }

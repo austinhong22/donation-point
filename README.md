@@ -112,6 +112,7 @@ curl -H "X-Actor-Id: 101" http://localhost:8080/api/v1/donor/me/dashboard
 - `docs/api-overview.md`
 - `docs/demo-script.md`
 - `docs/smoke-check.http`
+- `docs/known-limitations.md`
 
 ## Shutdown
 

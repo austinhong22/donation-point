@@ -1,3 +1,7 @@
+### Note
+# This file assumes a freshly seeded local database.
+# Resource ids like 6002, 9003, and 10002 are only reliable before you have created extra demo data.
+
 ### Shared actors
 GET http://localhost:8080/api/v1/demo/actors
 
@@ -53,3 +57,4 @@ X-Actor-Id: 301
 
 ### Allocation detail timeline
 GET http://localhost:8080/api/v1/allocations/9003/detail
+X-Actor-Id: 101

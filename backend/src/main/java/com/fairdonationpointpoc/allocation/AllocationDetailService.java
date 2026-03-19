@@ -1,10 +1,15 @@
 package com.fairdonationpointpoc.allocation;
 
+import com.fairdonationpointpoc.actor.ActorContextHolder;
+import com.fairdonationpointpoc.common.exception.AccessDeniedException;
+import com.fairdonationpointpoc.common.exception.AuthenticationRequiredException;
 import com.fairdonationpointpoc.common.exception.ResourceNotFoundException;
+import com.fairdonationpointpoc.common.model.Role;
 import com.fairdonationpointpoc.domain.repository.AuditEventRepository;
 import com.fairdonationpointpoc.domain.repository.DonationAllocationRepository;
 import com.fairdonationpointpoc.domain.repository.PartnerOrderRepository;
 import com.fairdonationpointpoc.domain.repository.PointConversionRepository;
+import com.fairdonationpointpoc.domain.repository.UserRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,17 +20,23 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AllocationDetailService {
 
+    private final ActorContextHolder actorContextHolder;
+    private final UserRepository userRepository;
     private final DonationAllocationRepository donationAllocationRepository;
     private final PartnerOrderRepository partnerOrderRepository;
     private final AuditEventRepository auditEventRepository;
     private final PointConversionRepository pointConversionRepository;
 
     public AllocationDetailService(
+        ActorContextHolder actorContextHolder,
+        UserRepository userRepository,
         DonationAllocationRepository donationAllocationRepository,
         PartnerOrderRepository partnerOrderRepository,
         AuditEventRepository auditEventRepository,
         PointConversionRepository pointConversionRepository
     ) {
+        this.actorContextHolder = actorContextHolder;
+        this.userRepository = userRepository;
         this.donationAllocationRepository = donationAllocationRepository;
         this.partnerOrderRepository = partnerOrderRepository;
         this.auditEventRepository = auditEventRepository;
@@ -36,6 +47,7 @@ public class AllocationDetailService {
     public AllocationDetailResponse getDetail(Long allocationId) {
         var allocation = donationAllocationRepository.findWithDetailById(allocationId)
             .orElseThrow(() -> new ResourceNotFoundException("Allocation not found."));
+        assertAccess(allocation);
 
         List<AllocationOrderTraceResponse> relatedOrders = partnerOrderRepository
             .findAllByDonationAllocationIdOrderByCreatedAtAsc(allocationId).stream()
@@ -102,5 +114,32 @@ public class AllocationDetailService {
             relatedOrders,
             auditEvents
         );
+    }
+
+    private void assertAccess(com.fairdonationpointpoc.domain.model.DonationAllocation allocation) {
+        var actorContext = actorContextHolder.getCurrentActor()
+            .orElseThrow(() -> new AuthenticationRequiredException("X-Actor-Id header is required."));
+
+        if (actorContext.role() == Role.ADMIN) {
+            return;
+        }
+
+        if (actorContext.role() == Role.DONOR && allocation.getDonor().getId().equals(actorContext.actorId())) {
+            return;
+        }
+
+        if (actorContext.role() == Role.CHARITY_MANAGER) {
+            var actor = userRepository.findByIdAndActiveTrue(actorContext.actorId())
+                .orElseThrow(() -> new ResourceNotFoundException("Actor not found for X-Actor-Id header."));
+
+            if (
+                actor.getManagedCharity() != null
+                    && actor.getManagedCharity().getId().equals(allocation.getCharity().getId())
+            ) {
+                return;
+            }
+        }
+
+        throw new AccessDeniedException("Actor does not have permission to view this allocation detail.");
     }
 }

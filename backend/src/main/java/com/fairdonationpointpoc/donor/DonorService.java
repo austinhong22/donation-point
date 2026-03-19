@@ -123,7 +123,7 @@ public class DonorService {
     @Transactional
     public DonorPaymentResponse convertPayment(Long paymentId) {
         User donor = requireDonor();
-        PointAccount donorWallet = requireDonorWallet(donor);
+        PointAccount donorWallet = requireLockedDonorWallet(donor);
         Payment payment = paymentRepository.findLockedById(paymentId)
             .orElseThrow(() -> new ResourceNotFoundException("Payment not found."));
 
@@ -180,7 +180,7 @@ public class DonorService {
     @Transactional
     public DonorAllocationResponse createAllocation(CreateDonationAllocationRequest request) {
         User donor = requireDonor();
-        PointAccount donorWallet = requireDonorWallet(donor);
+        PointAccount donorWallet = requireLockedDonorWallet(donor);
         Charity charity = charityRepository.findById(request.charityId())
             .filter(Charity::isActive)
             .orElseThrow(() -> new ResourceNotFoundException("Charity not found."));
@@ -240,6 +240,14 @@ public class DonorService {
 
     private PointAccount requireDonorWallet(User donor) {
         return pointAccountRepository.findByOwnerTypeAndOwnerReferenceIdAndAccountType(
+            PointAccountOwnerType.USER,
+            donor.getId(),
+            PointAccountType.DONOR_WALLET
+        ).orElseThrow(() -> new ResourceNotFoundException("Donor point account not found."));
+    }
+
+    private PointAccount requireLockedDonorWallet(User donor) {
+        return pointAccountRepository.findLockedByOwnerTypeAndOwnerReferenceIdAndAccountType(
             PointAccountOwnerType.USER,
             donor.getId(),
             PointAccountType.DONOR_WALLET
